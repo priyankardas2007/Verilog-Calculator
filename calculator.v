@@ -1,89 +1,102 @@
 module calculator (
     input  [3:0] A,
     input  [3:0] B,
-    input  [2:0] opcode,
+    input  [3:0] opcode,
 
     output reg [7:0] result,
     output reg       carry,
     output reg       error
 );
 
+    reg [4:0] temp;
+
     always @(*) begin
 
         // Default values
-        result = 8'b0;
+        result = 8'd0;
         carry  = 1'b0;
         error  = 1'b0;
+        temp   = 5'd0;
 
         case (opcode)
-
-            // ------------------------------------------------
-            // 000 : Addition
-            // ------------------------------------------------
-            3'b000: begin
-                {carry, result[3:0]} = {1'b0, A} + {1'b0, B};
+            4'b0000: begin // ADDITION
+                temp = {1'b0, A} + {1'b0, B};
+                result[3:0] = temp[3:0];
+                carry = temp[4];
             end
 
-            // ------------------------------------------------
-            // 001 : Subtraction
-            // ------------------------------------------------
-            3'b001: begin
+            4'b0001: begin // SUBTRACTION
                 result[3:0] = A - B;
-
-                // Borrow flag
-                if (A < B)
-                    carry = 1'b1;
+                carry = (A < B);
             end
 
-            // ------------------------------------------------
-            // 010 : Multiplication
-            // ------------------------------------------------
-            3'b010: begin
-                result = A * B;
+            4'b0010:
+                result = A * B; // MULTIPLICATION
+
+
+            4'b0011: begin // DIVISION
+                if (B != 0)
+                    result = A / B;
+                else
+                    error = 1'b1;
             end
 
-            // ------------------------------------------------
-            // 011 : AND
-            // ------------------------------------------------
-            3'b011: begin
-                result[3:0] = A & B;
+            4'b0100: begin // MODULUS
+                if (B != 0)
+                    result = A % B;
+                else
+                    error = 1'b1;
+            end
+            4'b0101:
+                result[3:0] = A & B; // AND
+
+            4'b0110:
+                result[3:0] = A | B; // OR
+
+            4'b0111:
+                result[3:0] = A ^ B; // XOR
+
+
+            4'b1000:
+                result[3:0] = ~A; // not gate 
+
+
+            4'b1001:
+                result[3:0] = ~(A & B); // NAND
+
+
+            4'b1010:
+                result[3:0] = ~(A | B);// NOR
+
+
+            4'b1011:
+                result[3:0] = ~(A ^ B); //XNOR
+
+
+            4'b1100:
+                result = A << B;// LEFT shift 
+
+
+            4'b1101:
+                result[3:0] = A >> B; // Right shift 
+
+
+            4'b1110: begin // compare 
+
+                if (A > B)
+                    result = 8'd1;
+                else if (A < B)
+                    result = 8'd2;
+                else
+                    result = 8'd0;
+
             end
 
-            // ------------------------------------------------
-            // 100 : OR
-            // ------------------------------------------------
-            3'b100: begin
-                result[3:0] = A | B;
-            end
+            4'b1111: /// invalid 
+                error = 1'b1;
 
-            // ------------------------------------------------
-            // 101 : XOR
-            // ------------------------------------------------
-            3'b101: begin
-                result[3:0] = A ^ B;
-            end
-
-            // ------------------------------------------------
-            // 110 : NOT A
-            // ------------------------------------------------
-            3'b110: begin
-                result[3:0] = ~A;
-            end
-
-            // ------------------------------------------------
-            // 111 : Invalid operation
-            // ------------------------------------------------
-            3'b111: begin
-                result = 8'b0;
-                carry  = 1'b0;
-                error  = 1'b1;
-            end
-
-            default: begin
-                result = 8'b0;
-                carry  = 1'b0;
-                error  = 1'b1;
-            end
+            default:
+                error = 1'b1;
 
         endcase
     end
